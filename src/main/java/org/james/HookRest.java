@@ -19,6 +19,9 @@ public class HookRest {
         }
         System.out.println("GITEA_SIGNATURE:" + signature) ;
         System.out.println(text);
+        for (String header : headers.keySet()){
+            System.out.println(header);
+        }
         return text;
     }
 
