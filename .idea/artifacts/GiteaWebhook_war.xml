@@ -8,7 +8,7 @@
       </options>
     </properties>
     <root id="archive" name="GiteaWebhook-1.0-SNAPSHOT.war">
-      <element id="artifact" artifact-name="GiteaWebhook" />
+      <element id="artifact" artifact-name="GiteaWebhook:war exploded" />
     </root>
   </artifact>
 </component>
