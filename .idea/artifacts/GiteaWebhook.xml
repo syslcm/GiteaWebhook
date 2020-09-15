@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact type="exploded-war" name="GiteaWebhook:war exploded">
+  <artifact type="exploded-war" name="GiteaWebhook">
     <output-path>$PROJECT_DIR$/target/GiteaWebhook-1.0-SNAPSHOT</output-path>
     <properties id="maven-jee-properties">
       <options>
@@ -13,6 +13,7 @@
         <element id="directory" name="classes">
           <element id="module-output" name="GiteaWebhook" />
         </element>
+        <element id="directory" name="lib" />
       </element>
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/target/GiteaWebhook-1.0-SNAPSHOT/META-INF/MANIFEST.MF" />
