@@ -1,7 +1,10 @@
 package org.james;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Iterator;
 import java.util.Map;
 
 
@@ -23,6 +26,26 @@ public class HookRest {
         System.out.println("gitea-event:" + giteaEvent) ;
         System.out.println(text);
         return text;
+    }
+
+    private void toJson(String text){
+        JSONObject json = new JSONObject(text);
+        for (Iterator<String> it = json.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if ( json.get(key) instanceof JSONObject){
+                System.out.printf(key + ":" + json.get(key));
+
+            }
+            if ( json.get(key) instanceof JSONArray){
+                printArray((JSONArray) json.get(key));
+
+            }
+
+        }
+    }
+
+    private void printArray(JSONArray array){
+
     }
 
 }
