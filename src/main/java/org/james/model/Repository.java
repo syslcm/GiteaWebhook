@@ -1,5 +1,6 @@
 package org.james.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Repository {
@@ -15,7 +16,8 @@ public class Repository {
     private boolean privat;
     private boolean fork;
     private boolean template;
-    private String parent;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String parent="";
     private boolean mirror;
     private int size;
     @JsonProperty("html_url")

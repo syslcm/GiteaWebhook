@@ -1,8 +1,12 @@
 package org.james;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.james.model.ContentObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.*;
+import sha.SHA256;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -25,6 +29,31 @@ public class HookRest {
         System.out.println("GITEA_SIGNATURE:" + signature) ;
         System.out.println("gitea-event:" + giteaEvent) ;
         System.out.println(text);
+        SHA256 sha256 = new SHA256();
+        if (signature != null && signature.equals(sha256.encode(text)) ){
+            System.out.println("PASS");
+        }
+        ObjectMapper objectMapper = new ObjectMapper();
+        ContentObject contentObject = null;
+        try {
+            contentObject = objectMapper.readValue(text, ContentObject.class);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        if (contentObject != null) {
+            if (contentObject.getRepository() != null) {
+                if (contentObject.getRepository().getFullName() != null) {
+                    System.out.println("Full Name:" + contentObject.getRepository().getFullName());
+                }else{
+                    System.out.printf("contentObject.getRepository().getFullName() IS NULL!");
+                }
+            }else{
+                System.out.printf("contentObject.getRepository() IS NULL!");
+            }
+        }else{
+            System.out.println("contentObject is NULL!");
+        }
+
         return text;
     }
 
