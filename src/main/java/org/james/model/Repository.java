@@ -10,25 +10,25 @@ public class Repository {
     private String name;
     @JsonProperty("full_name")
     private String fullName;
-    private String description="";
+    private String description = "";
     private boolean empty;
     @JsonProperty("private")
     private boolean privat;
     private boolean fork;
     private boolean template;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String parent="";
+    private String parent = "";
     private boolean mirror;
     private int size;
     @JsonProperty("html_url")
-    private String htmlUrl="";
+    private String htmlUrl = "";
     @JsonProperty("ssh_url")
-    private String sshUrl="";
+    private String sshUrl = "";
     @JsonProperty("clone_url")
-    private String cloneUrl="";
+    private String cloneUrl = "";
     @JsonProperty("original_url")
-    private String originalUrl="";
-    private String website="";
+    private String originalUrl = "";
+    private String website = "";
     @JsonProperty("stars_count")
     private int starsCount;
     @JsonProperty("forks_count")
@@ -42,12 +42,12 @@ public class Repository {
     @JsonProperty("release_counter")
     private int releaseCounter;
     @JsonProperty("default_branch")
-    private String defaultBranch="";
+    private String defaultBranch = "";
     private boolean archived;
     @JsonProperty("created_at")
-    private String createdAt="";
+    private String createdAt = "";
     @JsonProperty("updated_at")
-    private String updatedAt="";
+    private String updatedAt = "";
     private Permissions permissions;
     @JsonProperty("has_issues")
     private boolean hasIssues;
@@ -68,7 +68,7 @@ public class Repository {
     @JsonProperty("allow_squash_merge")
     private boolean allowSquashMerge;
     @JsonProperty("avatar_url")
-    private String avatarUrl="";
+    private String avatarUrl = "";
 
     public int getId() {
         return id;
