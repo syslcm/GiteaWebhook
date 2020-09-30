@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.james.model.ContentObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import sha.SHA256;
 
+import javax.sql.DataSource;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -15,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping(path = "/hook")
 public class HookRest {
+
+    private DataSource dataSource;
 
     @PostMapping(value = "/push")
     public String doThings(@RequestBody String text, @RequestHeader Map<String, String> headers){
@@ -57,26 +62,21 @@ public class HookRest {
         return text;
     }
 
-    private void toJson(String text){
-        JSONObject json = new JSONObject(text);
-        for (Iterator<String> it = json.keys(); it.hasNext(); ) {
-            String key = it.next();
-            if ( json.get(key) instanceof JSONObject){
-                System.out.printf(key + ":" + json.get(key));
-
-            }
-            if ( json.get(key) instanceof JSONArray){
-                printArray((JSONArray) json.get(key));
-
-            }
-
-        }
+    @PostMapping(value = "/dbtest")
+    public String insertDBTest(){
+        JdbcTemplate jt = new JdbcTemplate(dataSource);
+        int c = jt.update("insert into git_added (content) values ('Ffald"+ System.currentTimeMillis() + "')");
+        return String.valueOf(c);
     }
 
-    private void printArray(JSONArray array){
-
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 }
 
 /*
