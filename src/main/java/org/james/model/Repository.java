@@ -1,10 +1,13 @@
 package org.james.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Repository {
 
+    @JsonIgnore
+    private long dbid;
     private int id;
     private Owner owner;
     private String name;
@@ -372,5 +375,13 @@ public class Repository {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public long getDbid() {
+        return dbid;
+    }
+
+    public void setDbid(long dbid) {
+        this.dbid = dbid;
     }
 }

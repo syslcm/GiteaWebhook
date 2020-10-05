@@ -114,8 +114,8 @@ public class HookRest {
 //            IntoDb intoDb = new IntoDb();
             intoDb.setGiteaEvent(giteaEvent);
             intoDb.setGiteaDelivery(giteaDelivery);
-            result = intoDb.insert(contentObject);
-            strResult = String.valueOf(result);
+            long resultL = intoDb.insert(contentObject);
+            strResult = String.valueOf(resultL);
 //            strResult = intoDb.insert2(contentObject);
 
         }else{
