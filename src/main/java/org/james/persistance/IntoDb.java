@@ -136,14 +136,20 @@ public class IntoDb {
                         commit.getVerification(),toDate(commit.getTimestamp()),commitId};
                 int u = jt.update(sql, vals);
                 if (u > 0){
-                    for (String addedVal : commit.getAdded()){
-                        insertChanged("GIT_ADDED",eventId,commitId, addedVal);
+                    if (commit.getAdded() != null) {
+                        for (String addedVal : commit.getAdded()) {
+                            insertChanged("GIT_ADDED", eventId, commitId, addedVal);
+                        }
                     }
-                    for (String removedVal : commit.getRemoved()){
-                        insertChanged("GIT_REMOVED",eventId,commitId, removedVal);
+                    if (commit.getRemoved() != null) {
+                        for (String removedVal : commit.getRemoved()) {
+                            insertChanged("GIT_REMOVED", eventId, commitId, removedVal);
+                        }
                     }
-                    for (String modifiedVal : commit.getModified()){
-                        insertChanged("GIT_MODIFIED",eventId,commitId, modifiedVal);
+                    if (commit.getModified() != null) {
+                        for (String modifiedVal : commit.getModified()) {
+                            insertChanged("GIT_MODIFIED", eventId, commitId, modifiedVal);
+                        }
                     }
                 }
             } else {
