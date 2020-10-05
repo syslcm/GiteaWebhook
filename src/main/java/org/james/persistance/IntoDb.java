@@ -1,9 +1,7 @@
 package org.james.persistance;
 
 import oracle.jdbc.OraclePreparedStatement;
-import org.james.model.ContentObject;
-import org.james.model.Pusher;
-import org.james.model.Repository;
+import org.james.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -55,9 +53,15 @@ public class IntoDb {
             eventId = rset.getLong(1);
             if (eventId > 0) {
                 long repoId = insertRepository(eventId, contentObject.getRepository());
+                for (Commit commit : contentObject.getCommits()){
+                    insertCommit(eventId,commit);
+                }
+                jt.update("update git_event set REF=?,BEFORE=?,AFTER=?,COMPARE_URL=?,HEAD_COMMIT=?,REPO_ID=?,PUSHER_GITEA_ID=?,SENDER_GITEA_ID=?,CREATE_DATE=? where id=?",
+                        new Object[]{contentObject.getRef(), contentObject.getBefore(),contentObject.getAfter(),
+                                contentObject.getCompareUrl(),contentObject.getHeadCommit(),repoId,
+                        insertPusher(contentObject),insertSender(contentObject),new Date(),eventId});
 
             }
-
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -82,7 +86,7 @@ public class IntoDb {
             rset.next();
             repoId = rset.getLong(1);
             if (repoId > 0) {
-                Object[] vals = {repository.getId(), repository.getOwner().getId(), repository.getName(), repository.getFullName(), repository.getDescription(), bool2Int(repository.isEmpty()), bool2Int(repository.isPrivat()),
+                Object[] vals = {repository.getId(), insertOwner(repository.getOwner()) , repository.getName(), repository.getFullName(), repository.getDescription(), bool2Int(repository.isEmpty()), bool2Int(repository.isPrivat()),
                         bool2Int(repository.isFork()), bool2Int(repository.isTemplate()), repository.getParent(), bool2Int(repository.isMirror()), repository.getSize(), repository.getHtmlUrl(), repository.getSshUrl(), repository.getCloneUrl(), repository.getOriginalUrl(), repository.getWebsite(), repository.getStarsCount(),
                         repository.getForksCount(), repository.getWatchersCount(), repository.getOpenIssueCcount(), repository.getOpenPrCounter(), repository.getReleaseCounter(), repository.getDefaultBranch(), bool2Int(repository.isArchived()),
                         toDate(repository.getCreatedAt()), toDate(repository.getUpdatedAt()), bool2Int(repository.getPermissions().isAdmin()),
@@ -104,6 +108,55 @@ public class IntoDb {
 
     }
 
+    private void insertChanged(String tableName, long eventId, long commitId, String val){
+        //GIT_ADDED
+        if (jt == null) jt = new JdbcTemplate(dataSource);
+        jt.update("insert into " + tableName + " (event_id,commit_id,STRING) values (?,?,?)",
+                new Object[]{eventId, commitId, val});
+    }
+
+    private long insertCommit(long eventId, Commit commit){
+        long commitId = 0;
+        if (jt == null) jt = new JdbcTemplate(dataSource);
+        String sql = "update GIT_COMMIT set GITEA_ID=?,MESSAGE=?,URL=?,AUTHOR_NAME=?,AUTHOR_EMAIL=?,AUTHOR_USERNAME=?,COMMITTER_NAME=?,COMMITTER_EMAIL=?,COMMITTER_USERNAME=?,VERIFICATION=?,\"TIMESTAMP\"=? where id=?";
+
+        OraclePreparedStatement ps0;
+        try {
+            String generatedColumns[] = {"ID"};
+            ps0 = (OraclePreparedStatement) jt.getDataSource().getConnection().prepareStatement("insert into GIT_COMMIT (ID,EVENT_ID) values (ISEQ$$_67951.NEXTVAL,?) ", generatedColumns);
+            ps0.setLong(1, eventId);
+            ps0.executeUpdate();
+            ResultSet rset = ps0.getGeneratedKeys();
+            rset.next();
+            commitId = rset.getLong(1);
+            if (commitId > 0) {
+                Object[] vals = {commit.getId(),commit.getMessage(),commit.getUrl(),
+                        commit.getAuthor().getName(), commit.getAuthor().getEmail(), commit.getAuthor().getUsername(),
+                        commit.getCommitter().getName(),commit.getCommitter().getEmail(),commit.getCommitter().getUsername(),
+                        commit.getVerification(),toDate(commit.getTimestamp()),commitId};
+                int u = jt.update(sql, vals);
+                if (u > 0){
+                    for (String addedVal : commit.getAdded()){
+                        insertChanged("GIT_ADDED",eventId,commitId, addedVal);
+                    }
+                    for (String removedVal : commit.getRemoved()){
+                        insertChanged("GIT_REMOVED",eventId,commitId, removedVal);
+                    }
+                    for (String modifiedVal : commit.getModified()){
+                        insertChanged("GIT_MODIFIED",eventId,commitId, modifiedVal);
+                    }
+                }
+            } else {
+                commitId = -1;
+            }
+            return commitId;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+            commitId = -2;
+            return commitId;
+        }
+    }
+
     private int insertPusher(ContentObject contentObject) {
         if (jt == null) jt = new JdbcTemplate(dataSource);
         int pusherId = contentObject.getPusher().getId();
@@ -113,12 +166,47 @@ public class IntoDb {
             return pusherId;
         } else {
             Pusher pusher = contentObject.getPusher();
-            int c = jt.update("insert into git_user (GITEA_ID,LOGIN,FULL_NAME,EMAIL,\"LANGUAGE\",IS_ADMIN,LAST_LOGIN,CREATED,USERNAME) valurs (?,?,?,?,?,?,?,?,?)",
+            int c = jt.update("insert into git_user (GITEA_ID,LOGIN,FULL_NAME,EMAIL,\"LANGUAGE\",IS_ADMIN,LAST_LOGIN,CREATED,USERNAME) VALUES (?,?,?,?,?,?,?,?,?)",
                     new Object[]{pusher.getId(), pusher.getLogin(), pusher.getFullName(),
-                            pusher.getEmail(), pusher.getLanguage(), pusher.isAdmin() ? 1 : 0,
+                            pusher.getEmail(), pusher.getLanguage(), bool2Int(pusher.isAdmin()),
                             toDate(pusher.getLastLogin()), toDate(pusher.getCreated()), pusher.getUsername()});
         }
         return pusherId;
+
+    }
+
+    private int insertSender(ContentObject contentObject) {
+        if (jt == null) jt = new JdbcTemplate(dataSource);
+        int senderId = contentObject.getSender().getId();
+        List giteaUserList = jt.queryForList("select * from GIT_USER where GITEA_ID = ?",
+                new Object[]{new Integer(senderId)});
+        if (giteaUserList.size() > 0) {
+            return senderId;
+        } else {
+            Sender sender = contentObject.getSender();
+            int c = jt.update("insert into git_user (GITEA_ID,LOGIN,FULL_NAME,EMAIL,\"LANGUAGE\",IS_ADMIN,LAST_LOGIN,CREATED,USERNAME) VALUES (?,?,?,?,?,?,?,?,?)",
+                    new Object[]{sender.getId(), sender.getLogin(), sender.getFullName(),
+                            sender.getEmail(), sender.getLanguage(), bool2Int(sender.isAdmin()),
+                            toDate(sender.getLastLogin()), toDate(sender.getCreated()), sender.getUsername()});
+        }
+        return senderId;
+
+    }
+
+    private int insertOwner(Owner owner) {
+        if (jt == null) jt = new JdbcTemplate(dataSource);
+        int ownerId = owner.getId();
+        List giteaUserList = jt.queryForList("select * from GIT_USER where GITEA_ID = ?",
+                new Object[]{new Integer(ownerId)});
+        if (giteaUserList.size() > 0) {
+            return ownerId;
+        } else {
+            int c = jt.update("insert into git_user (GITEA_ID,LOGIN,FULL_NAME,EMAIL,\"LANGUAGE\",IS_ADMIN,LAST_LOGIN,CREATED,USERNAME) VALUES (?,?,?,?,?,?,?,?,?)",
+                    new Object[]{owner.getId(), owner.getLogin(), owner.getFullName(),
+                            owner.getEmail(), owner.getLanguage(), bool2Int(owner.isAdmin()),
+                            toDate(owner.getLastLogin()), toDate(owner.getCreated()), owner.getUsername()});
+        }
+        return ownerId;
 
     }
 
